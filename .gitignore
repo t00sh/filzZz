@@ -1,0 +1,9 @@
+# Object files
+*.o
+
+# Executable
+filzZz
+
+# tmp files
+*~
+
