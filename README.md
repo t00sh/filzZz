@@ -1,4 +1,4 @@
-elfzz
+filzZz
 ====
 Tool for fuzzing files
 
