@@ -31,7 +31,7 @@ extern char **environ;
 void restaure_file(const char *filename, uint8_t *save);
 
 int _rand(uint32_t n) {
-  return rand() % n;
+  return rand() % (n + 1);
 }
 
 void handle_sigint(int sig) {
@@ -59,7 +59,7 @@ void fuzz_file(FILE *fd) {
   int off;
   uint8_t byte;
 
-  
+
   n_byte = options_bytes;
 
   while(n_byte) {
@@ -95,7 +95,8 @@ void execute_cmd(void) {
       if(WTERMSIG(status) == SIGABRT ||
 	 WTERMSIG(status) == SIGILL ||
 	 WTERMSIG(status) == SIGSEGV ||
-	 WTERMSIG(status) == SIGSYS) {
+	 WTERMSIG(status) == SIGSYS ||
+	 WTERMSIG(status) == SIGFPE) {
 	DEBUG("Fuzz is a success, aborting");
 	DEBUG("%d files tested", files_tested);
 	exit(EXIT_SUCCESS);
@@ -110,7 +111,7 @@ FILE* load_file(const char *filename, uint8_t **save) {
 
   fd = xfopen(filename, "r+");
   *save = xmalloc(options_length);
-  
+
   xfseek(fd, options_offset, SEEK_SET);
 
   if(fread(*save, 1, options_length, fd) != (size_t)options_length)
@@ -121,13 +122,22 @@ FILE* load_file(const char *filename, uint8_t **save) {
 
 void restaure_file(const char *filename, uint8_t *save) {
   FILE *fd;
-  
+
   fd = xfopen(filename, "r+");
   xfseek(fd, options_offset, SEEK_SET);
   fwrite(save, 1, options_length, fd);
 
   fclose(fd);
 
+}
+
+off_t get_file_size(const char *path) {
+  struct stat st;
+
+  if(stat(path, &st) < 0)
+    return 0;
+
+  return st.st_size;
 }
 
 int main(int argc, char **argv) {
@@ -139,6 +149,9 @@ int main(int argc, char **argv) {
 
   set_signals();
 
+  if(options_length == 0)
+    options_length = get_file_size(options_filename);
+
   DEBUG("Fuzzing range %ld-%ld", options_offset, options_offset+options_length);
   DEBUG("Poisonning %d bytes\n", options_bytes);
 
@@ -148,7 +161,7 @@ int main(int argc, char **argv) {
     if(files_tested % 100 == 0)
       DEBUG("Tested: %d", files_tested);
 
-    fd = load_file(options_filename, &main_saved);    
+    fd = load_file(options_filename, &main_saved);
     fuzz_file(fd);
     fclose(fd);
 

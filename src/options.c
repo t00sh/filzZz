@@ -26,7 +26,7 @@
 /* Options */
 const char *options_filename = NULL;
 char **options_argv = NULL;
-long options_length = 1;
+long options_length = 0;
 long options_offset = 0;
 int options_bytes = 1;
 int options_noerr = 0;
@@ -94,13 +94,13 @@ void options_parse(int argc, char **argv) {
       break;
 
     default:
-      usage(progname);      
+      usage(progname);
     }
   }
 
   if(options_offset < 0)
     FATAL_ERROR("Bad offset");
-  if(options_length <= 0)
+  if(options_length < 0)
     FATAL_ERROR("Bad length");
   if(options_bytes <= 0)
     FATAL_ERROR("Bad bytes");
@@ -115,6 +115,6 @@ void options_parse(int argc, char **argv) {
 
   for(i = optind; i < argc; i++) {
     options_argv[i-optind] = xstrdup(argv[i]);
-  }  
+  }
   options_argv[i-optind] = NULL;
 }
