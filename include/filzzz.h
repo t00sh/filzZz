@@ -55,7 +55,7 @@
 #define DEBUG(...)
 #endif
 
-
+extern const char **options_filenames;
 extern const char *options_filename;;
 extern char **options_argv;
 extern int options_argc;

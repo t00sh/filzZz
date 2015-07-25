@@ -60,7 +60,7 @@ void fuzz_file(FILE *fd) {
   uint8_t byte;
 
 
-  n_byte = options_bytes;
+  n_byte = _rand(options_bytes);
 
   while(n_byte) {
     off = _rand(options_length) + options_offset;
@@ -99,6 +99,7 @@ void execute_cmd(void) {
 	 WTERMSIG(status) == SIGFPE) {
 	DEBUG("Fuzz is a success, aborting");
 	DEBUG("%d files tested", files_tested);
+	DEBUG("Program fuzzed: %s", options_filename);
 	exit(EXIT_SUCCESS);
       }
     }
@@ -140,8 +141,29 @@ off_t get_file_size(const char *path) {
   return st.st_size;
 }
 
+void swap_file(void) {
+  static int n = 0;
+  int i, last;
+
+  last = n;
+  n++;
+
+  if(options_filenames[n] == NULL)
+    n = 0;
+
+  options_filename = options_filenames[n];
+
+  for(i = 1; options_argv[i]; i++) {
+    if(!strcmp(options_argv[i], options_filenames[last]))
+      options_argv[i] = (char*)options_filenames[n];
+  }
+
+  options_length = get_file_size(options_filename);
+}
+
 int main(int argc, char **argv) {
   FILE *fd;
+  time_t t = time(NULL);
 
   srand(time(NULL));
 
@@ -149,8 +171,7 @@ int main(int argc, char **argv) {
 
   set_signals();
 
-  if(options_length == 0)
-    options_length = get_file_size(options_filename);
+  options_length = get_file_size(options_filename);
 
   DEBUG("Fuzzing range %ld-%ld", options_offset, options_offset+options_length);
   DEBUG("Poisonning %d bytes\n", options_bytes);
@@ -158,7 +179,13 @@ int main(int argc, char **argv) {
   while(1) {
     files_tested++;
 
-    if(files_tested % 100 == 0)
+    if(time(NULL) - t > 6) {
+      swap_file();
+      t = time(NULL);
+      DEBUG("Swap to file %s", options_filename);
+    }
+
+    if(files_tested % 50 == 0)
       DEBUG("Tested: %d", files_tested);
 
     fd = load_file(options_filename, &main_saved);
@@ -167,6 +194,7 @@ int main(int argc, char **argv) {
 
     execute_cmd();
     restaure_file(options_filename, main_saved);
+    free(main_saved);
   }
 
   return EXIT_SUCCESS;

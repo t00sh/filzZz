@@ -24,12 +24,41 @@
 #include "filzzz.h"
 
 /* Options */
+const char **options_filenames = NULL;
 const char *options_filename = NULL;
 char **options_argv = NULL;
 long options_length = 0;
 long options_offset = 0;
 int options_bytes = 1;
 int options_noerr = 0;
+
+static const char** alloc_filenames(const char *filenames) {
+  const char **alloc;
+  int n;
+  const char *p, *start;
+
+  n = 0;
+  p = filenames;
+
+  while((p = strchr(p, ','))) {
+    n++;
+    p++;
+  }
+
+  alloc = xmalloc((n+2)*sizeof(char*));
+
+  n = 0;
+  start = filenames;
+  while((p = strchr(start, ','))) {
+    alloc[n++] = strndup(start, p-start);
+    start = p+1;
+  }
+
+  alloc[n++] = strdup(start);
+  alloc[n] = NULL;
+
+  return alloc;
+}
 
 /* Display program version & quit */
 static void version(void) {
@@ -110,11 +139,17 @@ void options_parse(int argc, char **argv) {
   }
 
   options_filename = argv[optind++];
+  options_filenames = alloc_filenames(options_filename);
+
+  options_filename = options_filenames[0];
 
   options_argv = xcalloc(argc-optind+1, sizeof(*options_argv));
 
   for(i = optind; i < argc; i++) {
-    options_argv[i-optind] = xstrdup(argv[i]);
+    if(!strcmp(argv[i], "%f"))
+      options_argv[i-optind] = xstrdup(options_filename);
+    else
+      options_argv[i-optind] = xstrdup(argv[i]);
   }
   options_argv[i-optind] = NULL;
 }
