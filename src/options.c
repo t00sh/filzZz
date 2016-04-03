@@ -72,12 +72,12 @@ static void usage(const char *progname) {
   printf("Usage : %s [OPTIONS] FILE COMMAND\n", progname);
   printf("Tool for fuzzing files\n");
   printf("\n");
-  printf("  -n, --noerr        Don't display the stderr output\n");
-  printf("  -b, --bytes        How many bytes to fuzz\n");
-  printf("  -l, --length       Fuzz length byte of file\n");
-  printf("  -o, --offset       Fuzz the file starting at offset\n");
-  printf("  -h, --help         Print help\n");
-  printf("  -v, --version      Print version\n");
+  printf("  -n        Don't display the stderr output\n");
+  printf("  -b        How many bytes to fuzz\n");
+  printf("  -l        Fuzz length byte of file\n");
+  printf("  -o        Fuzz the file starting at offset\n");
+  printf("  -h        Print help\n");
+  printf("  -v        Print version\n");
   exit(EXIT_SUCCESS);
 }
 
@@ -85,17 +85,8 @@ void options_parse(int argc, char **argv) {
   int i;
   int opt;
   char *progname = argv[0];
-  const struct option opts[] = {
-    {"noerr",       no_argument,       NULL, 'n'},
-    {"bytes",       required_argument, NULL, 'b'},
-    {"offset",      required_argument, NULL, 'o'},
-    {"length",      required_argument, NULL, 'l'},
-    {"help",        no_argument,       NULL, 'h'},
-    {"version",     no_argument,       NULL, 'v'},
-    {NULL,          0,                 NULL, 0  }
-  };
 
-  while((opt = getopt_long(argc, argv, "+nb:o:l:vh", opts, NULL)) != -1) {
+  while((opt = getopt(argc, argv, "+nb:o:l:vh")) != -1) {
     switch(opt) {
 
     case 'n':
